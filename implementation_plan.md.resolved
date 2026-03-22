@@ -1,0 +1,142 @@
+# Frontend Roadmap — Internship Management System
+
+## Current State Summary
+
+The project is a **React + Vite + TailwindCSS v4** app for Hacettepe University's internship program. It uses **shadcn/ui** (Radix-based) primitives and has **3 user roles**: Student, Coordinator, and Admin.
+
+### What Exists Today
+
+| Area | Status |
+|------|--------|
+| **Pages (9)** | Login, SignUp, MySubmissions, InternshipChatbot, HelpCenter, WorkingDaysCalculator, CompanySearch, AdminSystemMonitoring, CoordinatorAnalytics |
+| **UI Components (48)** | Full shadcn/ui library including an **unused** [sidebar.tsx](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/components/ui/sidebar.tsx) |
+| **Routing** | Flat `createBrowserRouter` — every page is a standalone route with no shared layout |
+| **Auth** | Stub only (`console.log`) — no real login flow or role-based guards |
+| **Data** | All pages use hardcoded mock arrays — no API layer |
+| **State Mgmt** | Local `useState` only — no global store or context |
+| **Navigation** | No sidebar, no top nav, no home/dashboard — pages are only reachable by URL |
+| **Theme** | Light/dark CSS variables defined but no toggle mechanism |
+
+### Route Map
+
+```
+/                        → Login
+/signup                  → SignUp
+/student/submissions     → MySubmissions
+/student/chatbot         → InternshipChatbot
+/student/working-days    → WorkingDaysCalculator
+/student/company-search  → CompanySearch
+/coordinator/analytics   → CoordinatorAnalytics
+/admin/system-monitoring → AdminSystemMonitoring
+/help                    → HelpCenter
+```
+
+---
+
+## Proposed Roadmap (Frontend Only)
+
+The work is broken into **6 phases**, ordered from foundational to feature-level. Each phase builds on the previous one.
+
+---
+
+### Phase 1 — App Shell & Navigation
+
+> **Goal**: Wrap authenticated pages in a shared layout with a sidebar + top bar so users can navigate between pages.
+
+- **Create `DashboardLayout.tsx`** — a layout component using the existing [sidebar.tsx](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/components/ui/sidebar.tsx) and [SidebarProvider](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/components/ui/sidebar.tsx#56-153)
+- **Build `AppSidebar.tsx`** — renders role-specific navigation links:
+  - **Student**: My Submissions, AI Chatbot, Working Days Calculator, Company Search, Help Center
+  - **Coordinator**: Analytics Dashboard, Help Center
+  - **Admin**: System Monitoring, Help Center
+- **Add a top header bar** — shows current page title, user avatar/name, and a theme toggle
+- **Restructure [routes.tsx](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/routes.tsx)** — use nested routes so all dashboard pages share `DashboardLayout` as a parent; keep Login and SignUp outside the layout
+- Login/SignUp pages remain **full-screen** without sidebar
+
+---
+
+### Phase 2 — Home Dashboard(s)
+
+> **Goal**: Give each role a landing page so they don't arrive at a blank screen after login.
+
+- **`StudentDashboard.tsx`** — quick-glance cards: submission progress, upcoming deadlines, recent chatbot conversations, working-day summary
+- **`CoordinatorDashboard.tsx`** — top-line stats (total students, approval rate, pending reviews) with links to analytics
+- **`AdminDashboard.tsx`** — system health snapshot: active users, error rate, latest log entries
+
+Each dashboard is the **default route** for its role (e.g. `/student`, `/coordinator`, `/admin`).
+
+---
+
+### Phase 3 — Auth Context & Route Guards
+
+> **Goal**: Simulate a logged-in user and protect routes by role (frontend-only, no real backend yet).
+
+- **Create `AuthContext`** — stores `user` object (name, email, role) and exposes `login()` / `logout()`
+- **`ProtectedRoute` wrapper** — redirects to `/` if not authenticated; redirects to own dashboard if accessing a route outside the user's role
+- **Update LoginForm** — on submit, set a hardcoded user in context (mock) and redirect to the role's dashboard
+- **Add logout** to sidebar footer
+
+---
+
+### Phase 4 — Shared Utilities & Polish
+
+> **Goal**: Clean up repeated patterns and improve UX consistency.
+
+- **Create a `PageHeader` component** — reusable title + description + optional action button used by all pages
+- **Extract duplicate components** — [FilterSelect](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/pages/CompanySearch.tsx#345-373), [MetricCard](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/pages/AdminSystemMonitoring.tsx#383-407), [InfoPill](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/pages/CompanySearch.tsx#374-384) appear in multiple pages with slight variations; consolidate into shared components
+- **Add breadcrumbs** — using the existing [breadcrumb.tsx](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/components/ui/breadcrumb.tsx) component
+- **Dark mode toggle** — use `next-themes` (already installed) to wire up the theme switch
+- **Loading & empty states** — add skeleton placeholders (existing [skeleton.tsx](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/components/ui/skeleton.tsx)) for data-loading moments
+
+---
+
+### Phase 5 — Missing Pages & Features
+
+> **Goal**: Fill in functional gaps visible in the existing page set.
+
+- **Student Profile / Settings page** — edit personal info, change password placeholder
+- **Notification Center** — a slide-out panel or page listing coordinator messages (data structure already exists in [MySubmissions](file:///c:/Users/zorlu/OneDrive/Desktop/internship-management-frontend/src/app/pages/MySubmissions.tsx#117-485))
+- **Coordinator: Student Detail view** — click a student row in analytics to see full submission history
+- **404 / Not Found page** — catch-all route with back-to-dashboard link
+
+---
+
+### Phase 6 — API Integration Prep
+
+> **Goal**: Make it easy to swap mock data for real API calls when the backend is ready.
+
+- **Create a `services/` folder** with one file per domain (e.g., `submissionService.ts`, `companyService.ts`)
+- **Each service exports async functions** that currently return mock data but have the same signature a real fetch would use
+- **Replace inline mock arrays** in pages with calls to these services
+- **Add a lightweight `useQuery`-style hook** or use React Query / SWR for data fetching, caching, and loading states
+
+---
+
+## Recommended Execution Order
+
+| Priority | Phase | Why first? |
+|----------|-------|------------|
+| 🔴 High | **Phase 1 — App Shell** | Everything else depends on having a layout and navigation |
+| 🔴 High | **Phase 2 — Dashboards** | Users need a landing page after login |
+| 🟡 Medium | **Phase 3 — Auth Context** | Needed to show correct sidebar links per role |
+| 🟡 Medium | **Phase 4 — Polish** | Improves DX and visual consistency |
+| 🟢 Low | **Phase 5 — Missing Pages** | Additive features |
+| 🟢 Low | **Phase 6 — API Prep** | Only needed before backend integration |
+
+---
+
+## Verification Plan
+
+Since this is a planning/roadmap document, verification will happen at each phase:
+
+### Per-Phase Verification
+- **Visual**: Run `npm run dev` and test all navigation flows in the browser
+- **Role switching**: After Phase 3, verify that each role sees only its own sidebar links and dashboard
+- **Responsive**: Test sidebar collapse on mobile viewport
+- **Theme**: After Phase 4, toggle dark mode and confirm all pages render correctly
+
+### Manual Testing
+- After each phase, launch the dev server and manually verify:
+  1. Navigate to each page via sidebar links
+  2. Check that the URL matches the expected route
+  3. Confirm login → dashboard redirect works
+  4. Confirm logout returns to login page

@@ -1,21 +1,32 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth, getDashboardPath } from "../contexts/AuthContext";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempted with:", { email, password, rememberMe });
-    // Handle login logic here
+    setError("");
+
+    const user = login(email, password);
+    if (user) {
+      navigate(getDashboardPath(user.role));
+    } else {
+      setError("Invalid email or password. Try one of the demo accounts below.");
+    }
   };
 
   return (
@@ -68,6 +79,10 @@ export function LoginForm() {
           </div>
         </div>
 
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -105,6 +120,14 @@ export function LoginForm() {
           </Link>
         </p>
       </form>
+
+      {/* Demo credentials hint */}
+      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-medium text-foreground">Demo accounts (password: 123456)</p>
+        <p>Student: ayse@cs.hacettepe.edu.tr</p>
+        <p>Coordinator: coordinator@cs.hacettepe.edu.tr</p>
+        <p>Admin: admin@cs.hacettepe.edu.tr</p>
+      </div>
     </div>
   );
 }

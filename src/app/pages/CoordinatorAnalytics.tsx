@@ -1,5 +1,6 @@
 // /coordinator/analytics
 
+import { Link } from "react-router";
 import { useMemo, useState } from "react";
 import {
   BarChart3,
@@ -380,9 +381,13 @@ export function CoordinatorAnalytics() {
                         <p>No students match the current filter set.</p>
                       ) : (
                         selectedGroupStudents.map((student) => (
-                          <p key={student.id}>
-                            {student.name} - {student.company}
-                          </p>
+                          <Link
+                            key={student.id}
+                            to={`/coordinator/student/${student.id}`}
+                            className="block rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-200"
+                          >
+                            <span className="font-medium">{student.name}</span> - {student.company}
+                          </Link>
                         ))
                       )}
                     </div>
